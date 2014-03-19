@@ -90,70 +90,95 @@ function myGraph(el) {
   // set up the D3 visualisation in the specified element
   var w = 500,
   h = 500;
-  var vis = d3.select(el)
-  .append("svg:svg")
-  .attr("width", w)
-  .attr("height", h)
-  .attr("id","svg")
-  .attr("pointer-events", "all")
-  .attr("viewBox","0 0 "+w+" "+h)
-  .attr("perserveAspectRatio","xMinYMid")
-  .append('svg:g');
+  var svg = d3.select(el)
+    .append("svg:svg")
+    .attr("width", w)
+    .attr("height", h)
+    .attr("id","svg")
+    .attr("pointer-events", "all")
+    .attr("viewBox","0 0 "+w+" "+h)
+    .attr("perserveAspectRatio","xMinYMid");
+  var vis = svg.append('svg:g');
 
   var force = d3.layout.force();
 
   var nodes = force.nodes(),
   links = force.links();
 
-  var update = function () {
-    var link = vis.selectAll("line")
-    .data(links, function(d) {
-      return d.id;
-    });
+  // build the arrow.
+  svg.append("svg:defs").selectAll("marker")
+      .data(["end"])      // Different link/path types can be defined here
+    .enter().append("svg:marker")    // This section adds in the arrows
+      .attr("id", String)
+      .attr("viewBox", "0 -5 10 10")
+      .attr("refX", 15)
+      .attr("refY", -1.5)
+      .attr("markerWidth", 6)
+      .attr("markerHeight", 6)
+      .attr("orient", "auto")
+    .append("svg:path")
+      .attr("d", "M0,-5L10,0L0,5");
 
-    link.enter().append("line")
-    .attr("id",function(d){return d.id;})
-    .attr("class","link");
+  var update = function () {
+    var link = vis.selectAll("path")
+      .data(links, function(d) {
+        return d.id;
+      });
+
+    link.enter().append("svg:path")
+      .attr("id",function(d){return d.id;})
+      .attr("class","link")
+      .attr("marker-end", "url(#end)");
+
     link.append("title")
-    .text(function(d){
-      return d.value;
-    });
+      .text(function(d){
+        return d.value;
+      });
+
     link.exit().remove();
 
     var node = vis.selectAll("g.node")
     .data(nodes, function(d) { return d.id;});
 
-      var nodeEnter = node.enter().append("g")
+    var nodeEnter = node.enter().append("g")
       .attr("class", "node")
       .call(force.drag);
 
-      nodeEnter.append("svg:circle")
+    nodeEnter.append("svg:circle")
       .attr("r", 16)
       .attr("id",function(d) { return "Node;"+d.id;})
       .attr("class","nodeStrokeClass");
 
-      nodeEnter.append("svg:text")
+    nodeEnter.append("svg:text")
       .attr("class","textClass")
       .text( function(d){return d.id;}) ;
 
-      node.exit().remove();
-      force.on("tick", function() {
+    node.exit().remove();
 
-        node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y         + ")"; });
+    force.on("tick", function() {
+      node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y         + ")"; });
 
-        link.attr("x1", function(d) { return d.source.x; })
-        .attr("y1", function(d) { return d.source.y; })
-        .attr("x2", function(d) { return d.target.x; })
-        .attr("y2", function(d) { return d.target.y; });
+      link.attr("d", function(d) {
+          var dx = d.target.x - d.source.x,
+              dy = d.target.y - d.source.y,
+              dr = Math.sqrt(dx * dx + dy * dy);
+          return "M" + 
+              d.source.x + "," + 
+              d.source.y + "A" + 
+              dr + "," + dr + " 0 0,1 " + 
+              d.target.x + "," + 
+              d.target.y;
       });
+        
+    });
 
       // Restart the force layout.
       force
-      .gravity(.05)
-      .distance(50)
-      .linkDistance( 50 )
-      .size([w, h])
-      .start();
+        .gravity(.05)
+        .distance(50)
+        .linkDistance( 50 )
+        .size([w, h])
+        .start();
   };
 
 
