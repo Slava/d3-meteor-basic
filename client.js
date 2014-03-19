@@ -16,10 +16,10 @@ if (Meteor.isClient) {
 
     Links.find().observe({
       added: function (doc) {
-        graph.addLink(doc.source, doc.target, doc.value);
+        graph.addLink(doc._id, doc.source, doc.target, doc.value);
       },
       removed: function (doc) {
-        graph.removeLink(doc.source, doc.target);
+        graph.removeLink(doc._id);
       }
     });
   };
@@ -29,7 +29,7 @@ function myGraph(el) {
 
   // Add and remove elements on the graph object
   this.addNode = function (id) {
-    nodes.push({"_id":id});
+    nodes.push({"id":id});
     update();
   };
 
@@ -47,10 +47,10 @@ function myGraph(el) {
     update();
   };
 
-  this.removeLink = function (source,target){
+  this.removeLink = function (id){
     for(var i=0;i<links.length;i++)
     {
-      if(links[i].source._id == source && links[i].target._id == target)
+      if(links[i].id === id)
         {
           links.splice(i,1);
           break;
@@ -69,19 +69,19 @@ function myGraph(el) {
     update();
   };
 
-  this.addLink = function (source, target, value) {
-    links.push({"source":findNode(source),"target":findNode(target),"value":value});
+  this.addLink = function (id, source, target, value) {
+    links.push({id: id, "source":findNode(source),"target":findNode(target),"value":value});
     update();
   };
 
   var findNode = function(id) {
     for (var i in nodes) {
-      if (nodes[i]["_id"] === id) return nodes[i];};
+      if (nodes[i]["id"] === id) return nodes[i];};
   };
 
   var findNodeIndex = function(id) {
     for (var i=0;i<nodes.length;i++) {
-      if (nodes[i]._id==id){
+      if (nodes[i].id==id){
         return i;
       }
     };
@@ -108,11 +108,11 @@ function myGraph(el) {
   var update = function () {
     var link = vis.selectAll("line")
     .data(links, function(d) {
-      return d._id;
+      return d.id;
     });
 
     link.enter().append("line")
-    .attr("id",function(d){return d._id;})
+    .attr("id",function(d){return d.id;})
     .attr("class","link");
     link.append("title")
     .text(function(d){
@@ -121,7 +121,7 @@ function myGraph(el) {
     link.exit().remove();
 
     var node = vis.selectAll("g.node")
-    .data(nodes, function(d) { return d._id;});
+    .data(nodes, function(d) { return d.id;});
 
       var nodeEnter = node.enter().append("g")
       .attr("class", "node")
@@ -129,12 +129,12 @@ function myGraph(el) {
 
       nodeEnter.append("svg:circle")
       .attr("r", 16)
-      .attr("id",function(d) { return "Node;"+d._id;})
+      .attr("id",function(d) { return "Node;"+d.id;})
       .attr("class","nodeStrokeClass");
 
       nodeEnter.append("svg:text")
       .attr("class","textClass")
-      .text( function(d){return d._id;}) ;
+      .text( function(d){return d.id;}) ;
 
       node.exit().remove();
       force.on("tick", function() {
