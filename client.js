@@ -26,6 +26,14 @@ if (Meteor.isClient) {
 }
 
 function myGraph(el) {
+  this.selectedNode = null;
+  var graph = this;
+
+  $(el).on('click', 'g.node', function (e) {
+    var node = this;
+    graph.selectedNode = d3.select(node).data()[0].name;
+    update();
+  });
 
   // Add and remove elements on the graph object
   this.addNode = function (id) {
@@ -222,13 +230,13 @@ if (Meteor.isServer) {
       _.each(data, function (val) {
         var comp = val.split(',');
         Links.insert({
-          source: val[0],
-          target: val[1],
-          value: val[2]
+          source: comp[0],
+          target: comp[1],
+          compue: comp[2]
         });
 
-        nodeNames.push(val[0]);
-        nodeNames.push(val[1]);
+        nodeNames.push(comp[0]);
+        nodeNames.push(comp[1]);
       });
 
       // remove duplicates
